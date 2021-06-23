@@ -359,9 +359,20 @@ export async function resolveExtensionsSettings(extensionService: IExtensionServ
 		const extensionId = group.extensionInfo!.id;
 		const extension = await extensionService.getExtension(extensionId);
 		const extensionName = extension!.displayName ?? extension!.name;
+
+		let sectionOrder = 0;
+		const extensionConfiguration = extension?.contributes?.configuration;
+		if (Array.isArray(extensionConfiguration)) {
+			const currentSection = extensionConfiguration.find((config) => (config as any)?.id === group.id);
+			if (currentSection) {
+				sectionOrder = (currentSection as any)?.order ?? 0;
+			}
+		}
+
 		const childEntry = {
 			id: group.id,
 			label: group.title,
+			order: sectionOrder,
 			settings: flatSettings
 		};
 		addEntryToTree(extensionId, extensionName, childEntry);
@@ -382,6 +393,14 @@ export async function resolveExtensionsSettings(extensionService: IExtensionServ
 					settings: value.children![0].settings
 				});
 			} else {
+				value.children!.sort((a, b) => {
+					if (a.order !== undefined && b.order !== undefined) {
+						return a.order - b.order;
+					} else {
+						// leave things as-is
+						return 0;
+					}
+				});
 				extGroups.push(value);
 			}
 		}
