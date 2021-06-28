@@ -11,8 +11,8 @@ import { CharCode } from 'vs/base/common/charCode';
 import * as strings from 'vs/base/common/strings';
 import { Configuration } from 'vs/editor/browser/config/configuration';
 import { ILineBreaksComputer, LineBreakData } from 'vs/editor/common/viewModel/viewModel';
-import { ModelDecorationInjectedTextOptions } from 'vs/editor/common/model/textModel';
 import { LineInjectedText } from 'vs/editor/common/model/textModelEvents';
+import { InjectedTextOptions } from 'vs/editor/common/model';
 
 const ttPolicy = window.trustedTypes?.createPolicy('domLineBreaksComputer', { createHTML: value => value });
 
@@ -151,7 +151,7 @@ function createLineBreaks(requests: string[], fontInfo: FontInfo, tabSize: numbe
 			}
 		}
 
-		let injectionOptions: ModelDecorationInjectedTextOptions[] | null;
+		let injectionOptions: InjectedTextOptions[] | null;
 		let injectionOffsets: number[] | null;
 		const curInjectedTexts = injectedTexts[i];
 		if (curInjectedTexts) {

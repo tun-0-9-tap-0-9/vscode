@@ -11,7 +11,7 @@ import { ILineBreaksComputerFactory } from 'vs/editor/common/viewModel/splitLine
 import { FontInfo } from 'vs/editor/common/config/fontInfo';
 import { ILineBreaksComputer, LineBreakData } from 'vs/editor/common/viewModel/viewModel';
 import { LineInjectedText } from 'vs/editor/common/model/textModelEvents';
-import { ModelDecorationInjectedTextOptions } from 'vs/editor/common/model/textModel';
+import { InjectedTextOptions } from 'vs/editor/common/model';
 
 const enum CharacterClass {
 	NONE = 0,
@@ -361,7 +361,7 @@ function createLineBreaksFromPreviousLineBreaks(classifier: WrappingCharacterCla
 function createLineBreaks(classifier: WrappingCharacterClassifier, _lineText: string, injectedTexts: LineInjectedText[] | null, tabSize: number, firstLineBreakColumn: number, columnsForFullWidthChar: number, wrappingIndent: WrappingIndent): LineBreakData | null {
 	const lineText = LineInjectedText.applyInjectedText(_lineText, injectedTexts);
 
-	let injectionOptions: ModelDecorationInjectedTextOptions[] | null;
+	let injectionOptions: InjectedTextOptions[] | null;
 	let injectionOffsets: number[] | null;
 	if (injectedTexts && injectedTexts.length > 0) {
 		injectionOptions = injectedTexts.map(t => t.options);
