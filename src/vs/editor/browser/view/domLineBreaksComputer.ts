@@ -11,6 +11,7 @@ import { CharCode } from 'vs/base/common/charCode';
 import * as strings from 'vs/base/common/strings';
 import { Configuration } from 'vs/editor/browser/config/configuration';
 import { ILineBreaksComputer, LineBreakData } from 'vs/editor/common/viewModel/viewModel';
+import { ModelDecorationInjectedTextOptions } from 'vs/editor/common/model/textModel';
 import { LineInjectedText } from 'vs/editor/common/model/textModelEvents';
 
 const ttPolicy = window.trustedTypes?.createPolicy('domLineBreaksComputer', { createHTML: value => value });
@@ -150,18 +151,18 @@ function createLineBreaks(requests: string[], fontInfo: FontInfo, tabSize: numbe
 			}
 		}
 
-		let injectionTexts: string[] | null;
+		let injectionOptions: ModelDecorationInjectedTextOptions[] | null;
 		let injectionOffsets: number[] | null;
 		const curInjectedTexts = injectedTexts[i];
 		if (curInjectedTexts) {
-			injectionTexts = curInjectedTexts.map(t => t.text);
+			injectionOptions = curInjectedTexts.map(t => t.options);
 			injectionOffsets = curInjectedTexts.map(text => text.column - 1);
 		} else {
-			injectionTexts = null;
+			injectionOptions = null;
 			injectionOffsets = null;
 		}
 
-		result[i] = new LineBreakData(breakOffsets, breakOffsetsVisibleColumn, wrappedTextIndentLength, injectionTexts, injectionOffsets);
+		result[i] = new LineBreakData(breakOffsets, breakOffsetsVisibleColumn, wrappedTextIndentLength, injectionOffsets, injectionOptions);
 	}
 
 	document.body.removeChild(containerDomNode);
