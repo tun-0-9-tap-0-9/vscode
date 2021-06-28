@@ -28,6 +28,7 @@ export class ExtHostTesting implements ExtHostTestingShape {
 	private readonly resultsChangedEmitter = new Emitter<void>();
 	private readonly controllers = new Map</* controller ID */ string, {
 		controller: vscode.TestController,
+		configurations: Map<string, vscode.TestRunConfiguration>,
 		collection: SingleUseTestCollection,
 	}>();
 	private readonly proxy: MainThreadTestingShape;
@@ -48,6 +49,49 @@ export class ExtHostTesting implements ExtHostTestingShape {
 		});
 	}
 
+	private createRunConfiguration(
+		configs: Map<string, vscode.TestRunConfiguration>,
+		label: string,
+		group: vscode.TestRunConfigurationGroup,
+		runHandler: vscode.TestRunHandler,
+		isDefault = false,
+	): vscode.TestRunConfiguration {
+		const proxy = this.proxy;
+		const configuration: vscode.TestRunConfiguration = {
+			get group() {
+				return group;
+			},
+
+			get label() {
+				return label;
+			},
+			set label(value: string) {
+				if (value !== label) {
+					label = value;
+				}
+			},
+
+			get isDefault() {
+				return isDefault;
+			},
+			set isDefault(value: boolean) {
+				if (value !== isDefault) {
+					isDefault = value;
+				}
+			},
+
+			runHandler,
+			configureHandler: undefined,
+			dispose() {
+
+			}
+		};
+
+		configs.set()
+
+		return configuration;
+	}
+
 	/**
 	 * Implements vscode.test.registerTestProvider
 	 */
@@ -60,6 +104,9 @@ export class ExtHostTesting implements ExtHostTestingShape {
 			root: collection.root,
 			get id() {
 				return controllerId;
+			},
+			createRunConfiguration: (label, group, runHandler, isDefault) => {
+				return new TestRunConfigurationImpl()
 			},
 			createTestRun: (request, name, persist = true) => {
 				return this.runTracker.createTestRun(controllerId, request, name, persist);
@@ -746,5 +793,45 @@ class TestObservers {
 		const tests = new MirroredTestCollection();
 		this.proxy.$subscribeToDiffs();
 		return { observers: 0, tests, };
+	}
+}
+
+class TestRunConfigurationImpl implements vscode.TestRunConfiguration {
+	readonly #proxy: MainThreadTestingShape;
+
+	public get label() {
+		return this._label;
+	}
+
+	public set label(value: string) {
+		if (value !== this._label) {
+			this._label = value;
+		}
+	}
+
+	public get isDefault() {
+		return this._isDefault;
+	}
+
+	public set isDefault(value: string) {
+		if (value !== this._isDefault) {
+			this._isDefault = value;
+		}
+	}
+
+	configureHandler?: (() => void);
+
+	constructor(
+		proxy: MainThreadTestingShape,
+		private _label: string,
+		public readonly group: vscode.TestRunConfigurationGroup,
+		public runHandler: vscode.TestRunHandler,
+		private _isDefault = false,
+	) {
+		this.#proxy = proxy;
+	}
+
+	dispose(): void {
+		throw new Error('Method not implemented.');
 	}
 }

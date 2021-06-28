@@ -1868,6 +1868,65 @@ declare module 'vscode' {
 		readonly removed: ReadonlyArray<TestItem>;
 	}
 
+	// Todo: this is basically the same as the TaskGroup, which is a class that
+	// allows custom groups to be created. However I don't anticipate having any
+	// UI for that, so enum for now?
+	export enum TestRunConfigurationGroup {
+		Run = 1,
+		Debug = 2,
+		Coverage = 3,
+	}
+
+	export type TestRunHandler = (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void;
+
+	export interface TestRunConfiguration {
+		/**
+		 * Label shown to the user in the UI.
+		 */
+		label: string;
+
+		/**
+		 * Configures where this configuration is grouped in the UI. If there
+		 * are no configurations for a group, it will not be available in the UI.
+		 */
+		readonly group: TestRunConfigurationGroup;
+
+		/**
+		 * Controls whether this configuration is the default action that will
+		 * be taken when its group is actions. For example, if the user clicks
+		 * the generic "run all" button, then the default configuration for
+		 * {@link TestRunConfigurationGroup.Run} will be executed.
+		 */
+		isDefault: boolean;
+
+		/**
+		 * If this method is present a configuration gear will be present in the
+		 * UI, and this method will be invoked when it's clicked. When called,
+		 * you can take other editor actions, such as showing a quick pick or
+		 * opening a configuration file.
+		 */
+		configureHandler?: () => void;
+
+		/**
+		 * Starts a test run. When called, the controller should call
+		 * {@link TestController.createTestRun}. All tasks associated with the
+		 * run should be created before the function returns or the reutrned
+		 * promise is resolved.
+		 *
+		 * @param request Request information for the test run
+		 * @param cancellationToken Token that signals the used asked to abort the
+		 * test run. If cancellation is requested on this token, all {@link TestRun}
+		 * instances associated with the request will be
+		 * automatically cancelled as well.
+		 */
+		runHandler: TestRunHandler;
+
+		/**
+		 * Deletes the run configuration.
+		 */
+		dispose(): void;
+	}
+
 	/**
 	 * Interface to discover and execute tests.
 	 */
@@ -1894,6 +1953,16 @@ declare module 'vscode' {
 		readonly root: TestItem;
 
 		/**
+		 * Creates a configuration used for running tests. Extensions must create
+		 * at least one configuration in order for tests to be run.
+		 * @param label Human-readable label for this configuration
+		 * @param group Configures where this configuration is grouped in the UI.
+		 * @param runHandler Function called to start a test run
+		 * @param isDefault Whether this is the default action for the group
+		 */
+		createRunConfiguration(label: string, group: TestRunConfigurationGroup, runHandler: TestRunHandler, isDefault?: boolean): TestRunConfiguration;
+
+		/**
 		 * Creates a new managed {@link TestItem} instance as a child of this
 		 * one.
 		 * @param id Unique identifier for the TestItem.
@@ -1909,7 +1978,6 @@ declare module 'vscode' {
 			parent: TestItem,
 			uri?: Uri,
 		): TestItem;
-
 
 		/**
 		 * A function provided by the extension that the editor may call to request
@@ -1928,19 +1996,6 @@ declare module 'vscode' {
 		 */
 		resolveChildrenHandler?: (item: TestItem) => Thenable<void> | void;
 
-		/**
-		 * Starts a test run. When called, the controller should call
-		 * {@link TestController.createTestRun}. All tasks associated with the
-		 * run should be created before the function returns or the reutrned
-		 * promise is resolved.
-		 *
-		 * @param request Request information for the test run
-		 * @param cancellationToken Token that signals the used asked to abort the
-		 * test run. If cancellation is requested on this token, all {@link TestRun}
-		 * instances associated with the request will be
-		 * automatically cancelled as well.
-		 */
-		runHandler?: (request: TestRunRequest, token: CancellationToken) => Thenable<void> | void;
 		/**
 		 * Creates a {@link TestRun<T>}. This should be called by the
 		 * {@link TestRunner} when a request is made to execute tests, and may also
@@ -1985,16 +2040,11 @@ declare module 'vscode' {
 		exclude?: TestItem[];
 
 		/**
-		 * Whether tests in this run should be debugged.
-		 */
-		debug: boolean;
-
-		/**
 		 * @param tests Array of specific tests to run.
 		 * @param exclude Tests to exclude from the run
 		 * @param debug Whether tests in this run should be debugged.
 		 */
-		constructor(tests: readonly TestItem[], exclude?: readonly TestItem[], debug?: boolean);
+		constructor(tests: readonly TestItem[], exclude?: readonly TestItem[]);
 	}
 
 	/**
@@ -2122,18 +2172,6 @@ declare module 'vscode' {
 		 * discovery, such as syntax errors.
 		 */
 		error?: string | MarkdownString;
-
-		/**
-		 * Whether this test item can be run by providing it in the
-		 * {@link TestRunRequest.tests} array. Defaults to `true`.
-		 */
-		runnable: boolean;
-
-		/**
-		 * Whether this test item can be debugged by providing it in the
-		 * {@link TestRunRequest.tests} array. Defaults to `false`.
-		 */
-		debuggable: boolean;
 
 		/**
 		 * Marks the test as outdated. This can happen as a result of file changes,
